@@ -5,7 +5,7 @@ from typing import List, Dict, Optional
 from datetime import datetime
 import json
 import asyncio
-import bcrypt
+from passlib.hash import pbkdf2_sha256
 import uuid
 
 app = FastAPI(title="Real-Time Chat API")
@@ -54,17 +54,12 @@ class ConversationRequest(BaseModel):
 
 # Helper functions
 def hash_password(password: str) -> str:
-    """Hash a password using bcrypt"""
-    password_bytes = password.encode('utf-8')
-    salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(password_bytes, salt)
-    return hashed.decode('utf-8')
+    """Hash a password using PBKDF2-SHA256 (pure Python, no compilation needed)"""
+    return pbkdf2_sha256.hash(password)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash"""
-    password_bytes = plain_password.encode('utf-8')
-    hashed_bytes = hashed_password.encode('utf-8')
-    return bcrypt.checkpw(password_bytes, hashed_bytes)
+    return pbkdf2_sha256.verify(plain_password, hashed_password)
 
 def create_user(username: str, email: str, password: str) -> dict:
     user_id = str(uuid.uuid4())
