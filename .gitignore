@@ -1,0 +1,27 @@
+# Global ignores
+
+# Python virtual environments
+backend/venv/
+venv/
+.venv/
+
+# Python cache and artifacts
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+
+# Environment & local config
+.env
+.env.*
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Build logs
+*.log
