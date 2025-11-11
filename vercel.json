@@ -1,0 +1,20 @@
+{
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/frontend/login page/index.html"
+    },
+    {
+      "source": "/register",
+      "destination": "/frontend/register page/index.html"
+    },
+    {
+      "source": "/chat",
+      "destination": "/frontend/chat ui/index.html"
+    }
+  ]
+}
