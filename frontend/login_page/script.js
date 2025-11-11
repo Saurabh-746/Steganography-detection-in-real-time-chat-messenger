@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				msg.textContent = 'Login successful! Redirecting...';
 				msg.style.color = 'green';
 				setTimeout(() => {
-					location.href = '../chat_ui/index.html';
+					location.href = '/chat_ui/index.html';
 				}, 500);
 			} else {
 				msg.textContent = data.detail || 'Login failed. Please try again.';
