@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>Chat UI</title>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<div id="app">
+		<aside class="sidebar">
+			<header>
+				<h2>Chat</h2>
+				<div id="me" class="muted"></div>
+			</header>
+			<div class="contacts">
+				<h4>Contacts</h4>
+				<ul id="contactsList"></ul>
+			</div>
+			<form id="addContactForm" class="addContact">
+				<input id="newContact" placeholder="add username" autocomplete="off" />
+				<button>Add</button>
+			</form>
+			<div class="actions">
+				<a id="goRegister" href="../register page/index.html">Register</a>
+				<button id="logout">Logout</button>
+			</div>
+		</aside>
+		<main class="chat">
+			<div id="conversationHeader" class="convHeader">Select a contact</div>
+			<div id="messages" class="messages"></div>
+			<form id="sendForm" class="sendForm">
+				<input id="messageInput" placeholder="Type a message" autocomplete="off" />
+				<button>Send</button>
+			</form>
+		</main>
+	</div>
+
+	<script src="script.js"></script>
+</body>
+</html>

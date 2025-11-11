@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>Register</title>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<main class="center">
+		<h1>Register</h1>
+		<form id="registerForm">
+			<label for="username">Choose a username</label>
+			<input id="username" name="username" required autocomplete="off" />
+			<div class="row">
+				<button type="submit">Register</button>
+				<a class="link" href="../login page/index.html">Back to login</a>
+			</div>
+			<p id="msg" class="muted"></p>
+		</form>
+		<section>
+			<h3>Existing users</h3>
+			<ul id="usersList" class="muted"></ul>
+		</section>
+	</main>
+
+	<script src="script.js"></script>
+</body>
+</html>

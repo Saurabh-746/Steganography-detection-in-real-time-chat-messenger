@@ -1,0 +1,27 @@
+:root{--bg:#eef4ff;--panel:#fff;--accent:#2a7cf6;--muted:#666}
+*{box-sizing:border-box;font-family:Segoe UI,Roboto,Arial,sans-serif}
+html,body{height:100%;margin:0;background:var(--bg)}
+#app{display:flex;height:100vh}
+.sidebar{width:260px;padding:18px;background:var(--panel);border-right:1px solid #e8eefb}
+.sidebar header{display:flex;align-items:center;gap:8px}
+.sidebar h2{margin:0;font-size:18px}
+.muted{color:var(--muted);font-size:13px}
+.contacts{margin-top:14px}
+ul{list-style:none;padding:0;margin:0}
+.contact{padding:8px;border-radius:6px;cursor:pointer}
+.contact:hover{background:#f4f8ff}
+.addContact{display:flex;gap:8px;margin-top:12px}
+.addContact input{flex:1;padding:8px;border:1px solid #e9eef8;border-radius:6px}
+.addContact button{padding:8px;border-radius:6px;background:var(--accent);color:#fff;border:none}
+.actions{display:flex;gap:8px;margin-top:14px}
+.actions a{color:var(--accent);text-decoration:none}
+
+.chat{flex:1;display:flex;flex-direction:column}
+.convHeader{padding:16px;border-bottom:1px solid #eef4ff;background:#fff;font-weight:600}
+.messages{flex:1;padding:14px;overflow:auto;background:linear-gradient(180deg,#fbfdff,#f6f9ff)}
+.msg{max-width:70%;padding:8px 10px;margin:6px 0;border-radius:10px}
+.msg.in{background:#fff;border:1px solid #eef3ff}
+.msg.out{margin-left:auto;background:var(--accent);color:#fff}
+.sendForm{display:flex;padding:12px;border-top:1px solid #eef4ff;background:#fff}
+.sendForm input{flex:1;padding:10px;border:1px solid #e9eef8;border-radius:8px}
+.sendForm button{margin-left:8px;padding:10px 14px;border-radius:8px;background:var(--accent);color:#fff;border:none}
