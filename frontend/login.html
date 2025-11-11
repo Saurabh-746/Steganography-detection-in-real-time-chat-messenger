@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>Login</title>
+	<style>
+	:root{--bg:#f5f7fb;--card:#ffffff;--accent:#2b8cff;--muted:#666}
+	*{box-sizing:border-box;font-family:Segoe UI,Roboto,Arial,sans-serif}
+	html,body{height:100%;margin:0;background:var(--bg)}
+	.center{max-width:420px;margin:6vh auto;padding:24px;background:var(--card);border-radius:8px;box-shadow:0 6px 18px rgba(20,30,40,.08)}
+	h1{margin:0 0 12px;font-size:20px}
+	label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+	input{width:100%;padding:10px 12px;margin-bottom:12px;border:1px solid #e5e9ef;border-radius:6px}
+	.row{display:flex;gap:8px;align-items:center}
+	button{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer}
+	.link{margin-left:auto;color:var(--accent);text-decoration:none}
+	.muted{color:var(--muted);font-size:13px;margin-top:8px}
+	</style>
+</head>
+<body>
+	<main class="center">
+		<h1>Login</h1>
+		<form id="loginForm">
+			<label for="username">Username</label>
+			<input id="username" name="username" required autocomplete="off" />
+			<label for="password">Password</label>
+			<input id="password" name="password" type="password" required autocomplete="off" />
+			<div class="row">
+				<button type="submit">Login</button>
+				<a class="link" href="/register.html">Register</a>
+			</div>
+			<p id="msg" class="muted"></p>
+		</form>
+	</main>
+
+	<script>
+	const API_URL = 'https://steganography-detection-in-real-time.onrender.com';
+	document.addEventListener('DOMContentLoaded', () => {
+		const form = document.getElementById('loginForm');
+		const msg = document.getElementById('msg');
+		form.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			const username = document.getElementById('username').value.trim();
+			const password = document.getElementById('password').value;
+			if (!username || !password) {
+				msg.textContent = 'Please enter both username and password.';
+				return;
+			}
+			try {
+				msg.textContent = 'Logging in...';
+				const response = await fetch(`${API_URL}/api/login`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ username, password })
+				});
+				const data = await response.json();
+				if (response.ok) {
+					localStorage.setItem('currentUser', username);
+					localStorage.setItem('userInfo', JSON.stringify(data.user));
+					msg.textContent = 'Login successful! Redirecting...';
+					msg.style.color = 'green';
+					setTimeout(() => { location.href = '/chat.html'; }, 500);
+				} else {
+					msg.textContent = data.detail || 'Login failed. Please try again.';
+					msg.style.color = 'red';
+				}
+			} catch (error) {
+				msg.textContent = 'Error connecting to server. Make sure the backend is running.';
+				msg.style.color = 'red';
+				console.error('Login error:', error);
+			}
+		});
+	});
+	</script>
+</body>
+</html>
