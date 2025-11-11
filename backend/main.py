@@ -1,11 +1,9 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, EmailStr
 from typing import List, Dict, Optional
 from datetime import datetime
 import json
-import asyncio
-import bcrypt
+import hashlib
 import uuid
 
 app = FastAPI(title="Real-Time Chat API")
@@ -24,47 +22,14 @@ users_db: Dict[str, dict] = {}
 messages_db: Dict[str, List[dict]] = {}  # Key: conversation_id (sorted usernames joined by '|')
 active_connections: Dict[str, WebSocket] = {}
 
-# Pydantic models
-class UserRegister(BaseModel):
-    username: str
-    email: EmailStr
-    password: str
-
-class UserLogin(BaseModel):
-    username: str
-    password: str
-
-class Message(BaseModel):
-    sender: str
-    receiver: str
-    content: str
-    timestamp: Optional[str] = None
-    message_id: Optional[str] = None
-
-class ChatMessage(BaseModel):
-    message_id: str
-    sender: str
-    receiver: str
-    content: str
-    timestamp: str
-
-class ConversationRequest(BaseModel):
-    user1: str
-    user2: str
-
 # Helper functions
 def hash_password(password: str) -> str:
-    """Hash a password using bcrypt"""
-    password_bytes = password.encode('utf-8')
-    salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(password_bytes, salt)
-    return hashed.decode('utf-8')
+    """Hash a password using SHA-256 (for development only - use proper auth in production)"""
+    return hashlib.sha256(password.encode('utf-8')).hexdigest()
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash"""
-    password_bytes = plain_password.encode('utf-8')
-    hashed_bytes = hashed_password.encode('utf-8')
-    return bcrypt.checkpw(password_bytes, hashed_bytes)
+    return hash_password(plain_password) == hashed_password
 
 def create_user(username: str, email: str, password: str) -> dict:
     user_id = str(uuid.uuid4())
@@ -170,17 +135,24 @@ async def root():
     return {"message": "Real-Time Chat API with Steganography Detection"}
 
 @app.post("/api/register")
-async def register(user: UserRegister):
+async def register(data: dict):
     """Register a new user"""
-    if user.username in users_db:
+    username = data.get("username")
+    email = data.get("email")
+    password = data.get("password")
+    
+    if not username or not password or not email:
+        raise HTTPException(status_code=400, detail="Missing required fields")
+    
+    if username in users_db:
         raise HTTPException(status_code=400, detail="Username already exists")
     
     # Check if email already exists
     for existing_user in users_db.values():
-        if existing_user["email"] == user.email:
+        if existing_user["email"] == email:
             raise HTTPException(status_code=400, detail="Email already registered")
     
-    new_user = create_user(user.username, user.email, user.password)
+    new_user = create_user(username, email, password)
     
     return {
         "message": "User registered successfully",
@@ -192,9 +164,15 @@ async def register(user: UserRegister):
     }
 
 @app.post("/api/login")
-async def login(user: UserLogin):
+async def login(data: dict):
     """Login user"""
-    authenticated_user = authenticate_user(user.username, user.password)
+    username = data.get("username")
+    password = data.get("password")
+    
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="Missing username or password")
+    
+    authenticated_user = authenticate_user(username, password)
     if not authenticated_user:
         raise HTTPException(status_code=401, detail="Invalid username or password")
     
@@ -234,12 +212,19 @@ async def get_conversation_messages(user1: str, user2: str, limit: int = 50):
     return {"messages": recent_messages, "conversation_id": conv_id}
 
 @app.post("/api/send-message")
-async def send_message(message: Message):
+async def send_message(data: dict):
     """Send a message to another user"""
-    if message.sender not in users_db or message.receiver not in users_db:
+    sender = data.get("sender")
+    receiver = data.get("receiver")
+    content = data.get("content")
+    
+    if not sender or not receiver or not content:
+        raise HTTPException(status_code=400, detail="Missing required fields")
+    
+    if sender not in users_db or receiver not in users_db:
         raise HTTPException(status_code=404, detail="User not found")
     
-    conv_id = get_conversation_id(message.sender, message.receiver)
+    conv_id = get_conversation_id(sender, receiver)
     
     # Create message object
     message_id = str(uuid.uuid4())
@@ -247,9 +232,9 @@ async def send_message(message: Message):
     
     chat_message = {
         "message_id": message_id,
-        "sender": message.sender,
-        "receiver": message.receiver,
-        "content": message.content,
+        "sender": sender,
+        "receiver": receiver,
+        "content": content,
         "timestamp": timestamp,
         "type": "message"
     }
@@ -261,7 +246,7 @@ async def send_message(message: Message):
     
     # Notify receiver if online
     notification = json.dumps(chat_message)
-    await manager.send_personal_notification(message.receiver, notification)
+    await manager.send_personal_notification(receiver, notification)
     
     return {"message": "Message sent", "data": chat_message}
 
