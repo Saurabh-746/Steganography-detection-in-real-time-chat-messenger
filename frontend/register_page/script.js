@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (response.ok) {
 				msg.textContent = 'Registered successfully! Redirecting to login...';
 				msg.style.color = 'green';
-				setTimeout(() => location.href = '../login page/index.html', 800);
+				setTimeout(() => location.href = '../login_page/index.html', 800);
 			} else {
 				msg.textContent = data.detail || 'Registration failed. Please try again.';
 				msg.style.color = 'red';
