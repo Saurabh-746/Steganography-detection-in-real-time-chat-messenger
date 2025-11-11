@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// Redirect to login if not logged in
 	if (!currentUser) {
-		location.href = '../login page/index.html';
+		location.href = '../login_page/index.html';
 		return;
 	}
 
@@ -278,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 		localStorage.removeItem('currentUser');
 		localStorage.removeItem('userInfo');
-		location.href = '../login page/index.html';
+		location.href = '../login_page/index.html';
 	});
 
 	// Initialize
