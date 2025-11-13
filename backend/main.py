@@ -1,10 +1,18 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Optional
 from datetime import datetime
 import json
 import hashlib
 import uuid
+import io
+import os
+import sys
+
+import numpy as np
+from PIL import Image
+import torch
+import torch.nn.functional as F
 
 app = FastAPI(title="Real-Time Chat API")
 
@@ -129,10 +137,88 @@ async def startup_event():
             create_user(user["username"], user["email"], user["password"])
             print(f"Created user: {user['username']}")
 
+    # Load steganalysis CNN model once at startup
+    try:
+        # Add PyTorch model folder to path
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+        stega_dir = os.path.join(repo_root, 'steganalysis_with_CNN_Yedroudj-Net', 'pytorch_version')
+        if stega_dir not in sys.path:
+            sys.path.insert(0, stega_dir)
+        # Try import model definition
+        try:
+            import yed as yed_model
+        except Exception:
+            # Some variants keep modules under src/
+            src_dir = os.path.join(stega_dir, 'src')
+            if src_dir not in sys.path:
+                sys.path.insert(0, src_dir)
+            import yed as yed_model  # retry
+
+        model = yed_model.Net()
+        model.eval()
+        app.state.steg_model = model
+        app.state.model_loaded = True
+        print('Steganalysis CNN model loaded for inference (randomly initialized).')
+    except Exception as e:
+        app.state.steg_model = None
+        app.state.model_loaded = False
+        print(f"Warning: Failed to initialize steganalysis model: {e}")
+
+
+def _prepare_image_tensor(file_bytes: bytes) -> torch.Tensor:
+    """Convert uploaded image bytes into model-ready tensor [1,1,256,256]."""
+    with Image.open(io.BytesIO(file_bytes)) as img:
+        # Convert to grayscale and resize to 256x256 as expected by the model
+        img = img.convert('L').resize((256, 256))
+        arr = np.asarray(img, dtype=np.float32)
+        # Match training code: no normalization, just add channel and batch dims
+        tensor = torch.from_numpy(arr)[None, None, :, :]  # [1,1,H,W]
+        return tensor
+
 # Routes
 @app.get("/")
 async def root():
     return {"message": "Real-Time Chat API with Steganography Detection"}
+
+
+@app.post("/api/analyze-image")
+async def analyze_image(file: UploadFile = File(...)):
+    """Analyze an uploaded image and predict whether it's safe (cover) or stego.
+
+    Returns JSON: { safe: bool, label: 'safe'|'stego', confidence: float, details: {...} }
+    """
+    if not app.state.model_loaded or app.state.steg_model is None:
+        raise HTTPException(status_code=503, detail="Model not available on server")
+
+    if file.content_type is None or not file.content_type.startswith('image'):
+        raise HTTPException(status_code=400, detail="Please upload a valid image file")
+
+    file_bytes = await file.read()
+    try:
+        x = _prepare_image_tensor(file_bytes)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Could not read image. Ensure it's a valid format.")
+
+    with torch.no_grad():
+        logits = app.state.steg_model(x)
+        probs = F.softmax(logits, dim=1)[0].cpu().numpy().tolist()  # [cover, stego]
+
+    cover_prob = float(probs[0])
+    stego_prob = float(probs[1]) if len(probs) > 1 else 1.0 - cover_prob
+    safe = cover_prob >= stego_prob
+    label = 'safe' if safe else 'stego'
+    confidence = float(max(cover_prob, stego_prob))
+
+    return {
+        "safe": safe,
+        "label": label,
+        "confidence": confidence,
+        "details": {
+            "cover_prob": cover_prob,
+            "stego_prob": stego_prob,
+            "model": "Yedroudj-Net (PyTorch, untrained)"
+        }
+    }
 
 @app.post("/api/register")
 async def register(data: dict):

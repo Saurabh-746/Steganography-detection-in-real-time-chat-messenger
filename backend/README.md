@@ -57,6 +57,27 @@ The server will start at `http://localhost:8000`
 
 - **DELETE /api/messages** - Clear all messages (admin function)
 
+#### Steganography Analysis
+
+- **POST /api/analyze-image** - Analyze an uploaded image for steganography
+
+  Request (multipart/form-data):
+  - file: image/*
+
+  Response:
+  ```json
+  {
+    "safe": true,
+    "label": "safe",             // or "stego"
+    "confidence": 0.87,           // per-image confidence (0..1)
+    "details": {
+      "cover_prob": 0.87,
+      "stego_prob": 0.13,
+      "model": "Yedroudj-Net (PyTorch, untrained)"
+    }
+  }
+  ```
+
 ### WebSocket Endpoint
 
 - **WS /ws/{username}** - WebSocket connection for real-time chat
@@ -131,6 +152,11 @@ curl -X POST "http://localhost:8000/api/login" -H "Content-Type: application/jso
 curl http://localhost:8000/api/messages
 ```
 
+### Analyze an image:
+```powershell
+curl -X POST "http://localhost:8000/api/analyze-image" -H "Content-Type: multipart/form-data" -F "file=@path\\to\\image.jpg"
+```
+
 ## Production Considerations
 
 This implementation uses in-memory storage. For production:
@@ -143,6 +169,21 @@ This implementation uses in-memory storage. For production:
 6. **Logging**: Add proper logging and monitoring
 7. **File Storage**: Implement file upload/download for images
 8. **Steganography Detection**: Add image analysis for steganography detection
+
+### About the model
+
+This project integrates the Yedroudj-Net PyTorch implementation from `steganalysis_with_CNN_Yedroudj-Net/pytorch_version` and exposes it via `/api/analyze-image`. The included code defines the network architecture but no pretrained PyTorch weights are provided in this repository. The current setup initializes the network with random weights, so predictions are for wiring/demo purposes only.
+
+To get meaningful results, provide trained weights and load them during startup. For example:
+
+```python
+# In backend/main.py, after constructing the model
+state = torch.load("/absolute/path/to/weights.pt", map_location="cpu")
+model.load_state_dict(state["original_state"] if "original_state" in state else state)
+model.eval()
+```
+
+Alternatively, convert the provided Caffe model from `caffe_version` to PyTorch and load the converted weights.
 
 ## Notes
 

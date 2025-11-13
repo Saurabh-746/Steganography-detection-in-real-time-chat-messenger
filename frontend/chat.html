@@ -71,6 +71,12 @@ ul{list-style:none;padding:0;margin:0}
         <a id="goRegister" href="/register.html">Register</a>
         <button id="logout">Logout</button>
       </div>
+      <div id="stegoPanel" style="margin-top:14px;padding-top:12px;border-top:1px solid #eef4ff;">
+        <h4 style="margin:0 0 8px 0;font-size:14px;color:var(--muted)">Image Stego Check</h4>
+        <input type="file" id="stegoFile" accept="image/*" style="width:100%" />
+        <button id="stegoCheckBtn" style="margin-top:8px;width:100%;padding:8px;border-radius:6px;background:var(--accent);color:#fff;border:none;cursor:pointer">Analyze Image</button>
+        <div id="stegoResult" class="muted" style="margin-top:8px"></div>
+      </div>
     </aside>
     <main class="chat">
       <div id="conversationHeader" class="convHeader">Select a contact to start chatting</div>
@@ -98,6 +104,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const sendBtn = document.getElementById('sendBtn');
   const logoutBtn = document.getElementById('logout');
   const connectionStatus = document.getElementById('connectionStatus');
+  const stegoFile = document.getElementById('stegoFile');
+  const stegoCheckBtn = document.getElementById('stegoCheckBtn');
+  const stegoResult = document.getElementById('stegoResult');
 
   // Redirect to login if not logged in
   if (!currentUser) {
@@ -296,6 +305,32 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.removeItem('currentUser');
     localStorage.removeItem('userInfo');
     location.href = '/login.html';
+  });
+
+  // Steganography image analysis
+  stegoCheckBtn.addEventListener('click', async () => {
+    const file = stegoFile.files && stegoFile.files[0];
+    if (!file) { alert('Please choose an image first.'); return; }
+    stegoResult.textContent = 'Analyzing...';
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(`${API_URL}/api/analyze-image`, { method: 'POST', body: form });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Analysis failed');
+      }
+      const data = await res.json();
+      const pct = Math.round((data.confidence || 0) * 100);
+      if (data.safe) {
+        stegoResult.innerHTML = `<span style="color:var(--online);font-weight:600">Safe</span> (${pct}% confidence)`;
+      } else {
+        stegoResult.innerHTML = `<span style="color:#dc2626;font-weight:600">Stego suspected</span> (${pct}% confidence)`;
+      }
+    } catch (e) {
+      console.error(e);
+      stegoResult.textContent = `Error: ${e.message}`;
+    }
   });
 
   messageInput.disabled = true;
