@@ -5,34 +5,53 @@
 	<meta name="viewport" content="width=device-width,initial-scale=1" />
 	<title>Register</title>
 	<style>
-	:root{--bg:#f4f6fb;--card:#fff;--accent:#0b76ff;--muted:#666}
+	:root{
+	  --bg: #DED9EE;       /* Lavender Tint */
+	  --card: #FFFFFF;
+	  --primary: #228CDC;  /* Dodger Blue */
+	  --error: #B52B79;    /* Medium Violet */
+	  --success: #25D366;  /* Deep Green */
+	  --heading: #7B1D52;  /* Deep Purple */
+	  --text: #222222;     /* main content */
+	  --muted: #666666;    /* secondary */
+	}
 	*{box-sizing:border-box;font-family:Segoe UI,Roboto,Arial,sans-serif}
-	html,body{height:100%;margin:0;background:var(--bg)}
-	.center{max-width:520px;margin:6vh auto;padding:20px;background:var(--card);border-radius:8px;box-shadow:0 6px 18px rgba(20,30,40,.06)}
-	h1{margin:0 0 10px}
-	label{display:block;margin-bottom:6px;color:var(--muted)}
-	input{width:100%;padding:10px;border-radius:6px;border:1px solid #e9eef6;margin-bottom:12px}
-	button{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:6px}
-	.row{display:flex;gap:8px;align-items:center}
-	.link{margin-left:auto;color:var(--accent);text-decoration:none}
-	.muted{color:var(--muted);font-size:13px}
+	html,body{height:100%;margin:0;background:var(--bg);display:flex;align-items:center;justify-content:center}
+	/* make the credential block half the viewport width, but keep it responsive */
+	.center{width:50vw;max-width:700px;min-width:320px;min-height:60vh;margin:0;padding:36px;background:var(--card);border-radius:8px;box-shadow:0 8px 24px rgba(20,30,40,.08);display:flex;flex-direction:column;justify-content:center;position:relative}
+	/* Make the top heading large and centered. */
+	h1{margin:0 0 18px;font-size:clamp(32px,6.5vw,60px);color:var(--heading);text-align:center;font-weight:700}
+	label{display:block;font-size:15px;color:var(--muted);margin-bottom:8px}
+	/* center the form content inside the larger block */
+	.form-inner{width:70%;max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+	input{width:100%;padding:16px 18px;margin-bottom:14px;border:1px solid rgba(0,0,0,0.08);border-radius:10px;background:#fff;color:var(--text);font-size:16px}
+	/* large centered register button */
+	.register-btn-main{background:var(--primary);color:#ffffff;border:none;padding:14px 20px;border-radius:10px;cursor:pointer;width:50%;min-width:220px;align-self:center;font-size:16px}
+	/* back-to-login sits at the bottom-right of the block */
+	.back-btn{position:absolute;right:24px;bottom:24px;background:transparent;border:none;color:var(--primary);text-decoration:none;padding:8px 12px;border-radius:6px}
+	.muted{color:var(--muted);font-size:14px;margin-top:8px}
+
+	/* Feedback styles */
+	#msg{font-size:13px;margin-top:8px}
+	#msg.error{color:var(--error)}
+	#msg.success{color:var(--success)}
+	#msg.info{color:var(--text)}
 	</style>
 </head>
 <body>
 	<main class="center">
 		<h1>Register</h1>
 		<form id="registerForm">
-			<label for="username">Choose a username</label>
-			<input id="username" name="username" required autocomplete="off" />
-			<label for="email">Email</label>
-			<input id="email" name="email" type="email" required autocomplete="off" />
-			<label for="password">Password</label>
-			<input id="password" name="password" type="password" required autocomplete="off" />
-			<div class="row">
-				<button type="submit">Register</button>
-				<a class="link" href="/login.html">Back to login</a>
+			<div class="form-inner">
+				<label for="username">Choose a username</label>
+				<input id="username" name="username" required autocomplete="off" />
+				<!-- email removed per request -->
+				<label for="password">Password</label>
+				<input id="password" name="password" type="password" required autocomplete="off" />
+				<button class="register-btn-main" type="submit">Register</button>
+				<p id="msg" class="muted"></p>
 			</div>
-			<p id="msg" class="muted"></p>
+			<a class="back-btn" href="/login.html">Back to login</a>
 		</form>
 		<section>
 			<h3>Existing users</h3>
@@ -70,33 +89,32 @@
 		form.addEventListener('submit', async (e) => {
 			e.preventDefault();
 			const username = document.getElementById('username').value.trim();
-			const email = document.getElementById('email').value.trim();
 			const password = document.getElementById('password').value;
-			if (!username || !email || !password) {
+			if (!username || !password) {
 				msg.textContent = 'All fields are required';
-				msg.style.color = 'red';
+				msg.className = 'error';
 				return;
 			}
 			try {
 				msg.textContent = 'Registering...';
-				msg.style.color = 'black';
+				msg.className = 'info';
 				const response = await fetch(`${API_URL}/api/register`, {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ username, email, password })
+					body: JSON.stringify({ username, password })
 				});
 				const data = await response.json();
 				if (response.ok) {
 					msg.textContent = 'Registered successfully! Redirecting to login...';
-					msg.style.color = 'green';
+					msg.className = 'success';
 					setTimeout(() => location.href = '/login.html', 800);
 				} else {
 					msg.textContent = data.detail || 'Registration failed. Please try again.';
-					msg.style.color = 'red';
+					msg.className = 'error';
 				}
 			} catch (error) {
 				msg.textContent = 'Error connecting to server. Make sure the backend is running.';
-				msg.style.color = 'red';
+				msg.className = 'error';
 				console.error('Registration error:', error);
 			}
 		});
