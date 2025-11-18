@@ -173,19 +173,20 @@ async def root():
 async def register(data: dict):
     """Register a new user"""
     username = data.get("username")
-    email = data.get("email")
+    email = data.get("email", "")
     password = data.get("password")
     
-    if not username or not password or not email:
+    if not username or not password:
         raise HTTPException(status_code=400, detail="Missing required fields")
     
     if username in users_db:
         raise HTTPException(status_code=400, detail="Username already exists")
     
-    # Check if email already exists
-    for existing_user in users_db.values():
-        if existing_user["email"] == email:
-            raise HTTPException(status_code=400, detail="Email already registered")
+    # Check if email already exists (only when an email was provided)
+    if email:
+        for existing_user in users_db.values():
+            if existing_user.get("email") == email:
+                raise HTTPException(status_code=400, detail="Email already registered")
     
     new_user = create_user(username, email, password)
     
