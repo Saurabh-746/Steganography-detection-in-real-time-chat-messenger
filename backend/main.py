@@ -286,6 +286,36 @@ async def send_message(data: dict):
     
     return {"message": "Message sent", "data": chat_message}
 
+
+@app.post("/api/upload-image")
+async def upload_image(file: UploadFile = File(...)):
+    """Accept an image upload, optionally run steganalysis, and return a data-URL."""
+    try:
+        content = await file.read()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Basic steganalysis stub. If a model was loaded at startup, you can
+    # integrate it here. For now return a neutral confidence value.
+    safe = True
+    confidence = 0.0
+    try:
+        if getattr(app.state, 'model_loaded', False) and getattr(app.state, 'steg_model', None):
+            # Placeholder: real model inference would go here. Keeping lightweight
+            # so the endpoint works even when the heavy model isn't available.
+            confidence = 0.5
+            safe = True
+    except Exception:
+        safe = True
+
+    import base64
+    try:
+        data_url = f"data:{file.content_type};base64,{base64.b64encode(content).decode('utf-8')}"
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to encode image: {e}")
+
+    return {"url": data_url, "safe": safe, "confidence": confidence}
+
 @app.delete("/api/messages")
 async def clear_messages():
     """Clear all messages (admin function)"""

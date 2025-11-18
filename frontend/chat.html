@@ -95,6 +95,9 @@ ul{list-style:none;padding:0;margin:0}
       <div id="messages" class="messages"></div>
       <form id="sendForm" class="sendForm">
         <input id="messageInput" placeholder="Type a message" autocomplete="off" disabled />
+        <!-- Image upload input -->
+        <input type="file" id="imageInput" accept="image/*" style="margin-left:8px" />
+        <button type="button" id="uploadImageBtn" style="margin-left:8px;padding:10px 12px;border-radius:8px;background:var(--incoming-accent);color:#fff;border:none;cursor:pointer">Upload</button>
         <button id="sendBtn" disabled>Send</button>
       </form>
     </main>
@@ -119,6 +122,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const stegoFile = document.getElementById('stegoFile');
   const stegoCheckBtn = document.getElementById('stegoCheckBtn');
   const stegoResult = document.getElementById('stegoResult');
+  const imageInput = document.getElementById('imageInput');
+  const uploadImageBtn = document.getElementById('uploadImageBtn');
 
   // Redirect to login if not logged in
   if (!currentUser) {
@@ -219,7 +224,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const time = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const contentSpan = document.createElement('span');
     contentSpan.className = 'content';
-    contentSpan.textContent = message.content;
+    // If the message content is a JSON string describing an image, render it
+    // as an <img>. Otherwise render as text.
+    let parsed = null;
+    try {
+      parsed = JSON.parse(message.content);
+    } catch (e) { parsed = null; }
+    if (parsed && parsed.kind === 'image' && parsed.url) {
+      const img = document.createElement('img');
+      img.src = parsed.url;
+      img.style.maxWidth = '320px';
+      img.style.borderRadius = '8px';
+      img.style.display = 'block';
+      img.style.marginTop = '6px';
+      contentSpan.appendChild(img);
+      if (parsed.safe === false) {
+        const warn = document.createElement('div');
+        warn.style.fontSize = '12px';
+        warn.style.color = 'var(--error)';
+        warn.textContent = 'Stego suspected';
+        contentSpan.appendChild(warn);
+      }
+    } else {
+      contentSpan.textContent = message.content;
+    }
     const timeSpan = document.createElement('span');
     timeSpan.className = 'time';
     timeSpan.textContent = time;
@@ -301,6 +329,35 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       console.error('Error sending message:', error);
       alert('Failed to send message. Please try again.');
+    }
+  });
+
+  // Image upload flow: upload to backend, then send as chat message via WebSocket
+  uploadImageBtn.addEventListener('click', async () => {
+    const file = imageInput.files && imageInput.files[0];
+    if (!file) { alert('Please select an image to upload.'); return; }
+    if (!selectedContact) { alert('Please select a contact to send the image to.'); return; }
+    try {
+      uploadImageBtn.disabled = true;
+      uploadImageBtn.textContent = 'Uploading...';
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(`${API_URL}/api/upload-image`, { method: 'POST', body: form });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Upload failed');
+      }
+      const data = await res.json();
+      const payload = JSON.stringify({ kind: 'image', url: data.url, safe: data.safe, confidence: data.confidence });
+      if (!ws || ws.readyState !== WebSocket.OPEN) { alert('Not connected to server.'); return; }
+      ws.send(JSON.stringify({ type: 'message', receiver: selectedContact, content: payload }));
+      imageInput.value = '';
+    } catch (err) {
+      console.error('Image upload error:', err);
+      alert('Failed to upload image: ' + err.message);
+    } finally {
+      uploadImageBtn.disabled = false;
+      uploadImageBtn.textContent = 'Upload';
     }
   });
 
