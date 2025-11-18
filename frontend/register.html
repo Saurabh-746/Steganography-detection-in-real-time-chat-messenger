@@ -15,6 +15,12 @@
 	  --text: #222222;     /* main content */
 	  --muted: #666666;    /* secondary */
 	}
+
+	/* Focus and hover states to match login theme */
+	input:focus{outline:none;border-color:var(--primary);box-shadow:0 8px 20px rgba(34,140,220,0.08), 0 0 0 4px rgba(34,140,220,0.08)}
+	input::placeholder{color:rgba(34,34,34,0.45)}
+	.register-btn-main:hover{filter:brightness(.96);transform:translateY(-1px)}
+	.register-btn-main:active{transform:translateY(0)}
 	*{box-sizing:border-box;font-family:Segoe UI,Roboto,Arial,sans-serif}
 	html,body{height:100%;margin:0;background:var(--bg);display:flex;align-items:center;justify-content:center}
 	/* make the credential block half the viewport width, but keep it responsive */
@@ -45,7 +51,8 @@
 			<div class="form-inner">
 				<label for="username">Choose a username</label>
 				<input id="username" name="username" required autocomplete="off" />
-				<!-- email removed per request -->
+				<label for="email">Email</label>
+				<input id="email" name="email" type="email" required autocomplete="off" />
 				<label for="password">Password</label>
 				<input id="password" name="password" type="password" required autocomplete="off" />
 				<button class="register-btn-main" type="submit">Register</button>
@@ -90,18 +97,19 @@
 			e.preventDefault();
 			const username = document.getElementById('username').value.trim();
 			const password = document.getElementById('password').value;
-			if (!username || !password) {
-				msg.textContent = 'All fields are required';
-				msg.className = 'error';
-				return;
-			}
+				const email = document.getElementById('email').value.trim();
+				if (!username || !password || !email) {
+					msg.textContent = 'All fields are required';
+					msg.className = 'error';
+					return;
+				}
 			try {
 				msg.textContent = 'Registering...';
 				msg.className = 'info';
 				const response = await fetch(`${API_URL}/api/register`, {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ username, password })
+					body: JSON.stringify({ username, password, email })
 				});
 				const data = await response.json();
 				if (response.ok) {
